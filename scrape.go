@@ -6,8 +6,7 @@ import (
 	"image"
 	_ "image/gif" // for the purpose of this program we only care about the first frame which is what we get
 	_ "image/png"
-	"io"
-	"os"
+	"net/http"
 	"regexp"
 	"strings"
 	"sync"
@@ -208,22 +207,22 @@ func Scrape() (result ScrapedResult, err error) {
 
 	for _, page := range urls {
 
-		// var resp *http.Response
-		var resp io.Reader
+		var resp *http.Response
+		// var resp io.Reader
 		var doc *goquery.Document
 
 		url := fmt.Sprintf("%s/%s", website, page)
 		fmt.Printf("Getting %s\n", url)
 
-		// resp, err = http.Get(url)
-		resp, err = os.Open("tests/" + page)
+		resp, err = http.Get(url)
+		// resp, err = os.Open("tests/" + page)
 		if err != nil {
 			break
 		}
-		// defer resp.Body.Close()
+		defer resp.Body.Close()
 		// defer resp.Close()
 
-		doc, err = goquery.NewDocumentFromReader(resp) // this is so cool! it reads it as it downloads
+		doc, err = goquery.NewDocumentFromReader(resp.Body) // this is so cool! it reads it as it downloads
 		if err != nil {
 			break
 		}
