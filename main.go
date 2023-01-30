@@ -13,9 +13,6 @@ import (
 func IsDir(Path string) (bool, error) {
 	file, err := os.Open(Path)
 	if err != nil {
-		if err == os.ErrNotExist {
-			fmt.Print("DOESN'T EXIST")
-		}
 		return false, err
 	}
 
@@ -29,8 +26,9 @@ func IsDir(Path string) (bool, error) {
 }
 
 func main() {
-	src := []string{"html"}
-	dst := []string{"cart"}
+
+	var src, dst []string
+	dst = []string{"cart"}
 
 	for i, el := range os.Args {
 		if el == "%" {
@@ -38,6 +36,11 @@ func main() {
 			dst = os.Args[i+1:]
 			break
 		}
+	}
+	if len(src) == 0 && len(os.Args) > 1 {
+		src = os.Args[1:] // this is all to allow user to just specify a modifer or just a src
+	} else {
+		src = []string{"html"}
 	}
 
 	if len(src) == 0 || len(dst) == 0 || !(dst[0] == "cart" || dst[0] == "list") {
