@@ -61,6 +61,7 @@ func ReadFolder(folderPath string, brandName string) (*Brand, error) {
 		brand.emojis.Add(name, imageData)
 	}
 
+	brand.CleanUp()
 	return brand, nil
 }
 

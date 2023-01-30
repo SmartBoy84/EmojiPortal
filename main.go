@@ -28,7 +28,7 @@ func IsDir(Path string) (bool, error) {
 func main() {
 
 	var src, dst []string
-	dst = []string{"cart"}
+	dst = []string{"list"}
 
 	for i, el := range os.Args {
 		if el == "%" {
@@ -37,13 +37,16 @@ func main() {
 			break
 		}
 	}
-	if len(src) == 0 && len(os.Args) > 1 {
-		src = os.Args[1:] // this is all to allow user to just specify a modifer or just a src
-	} else {
-		src = []string{"html"}
+
+	if len(src) == 0 {
+		if len(os.Args) > 1 {
+			src = os.Args[1:] // this is all to allow user to just specify a src
+		} else {
+			src = []string{"html"}
+		}
 	}
 
-	if len(src) == 0 || len(dst) == 0 || !(dst[0] == "cart" || dst[0] == "list") {
+	if len(src) == 0 || !(len(dst) == 0 || dst[0] == "cart" || dst[0] == "list") {
 		fmt.Println("{folderNames... cartridgeFiles... html{:1 - include modifers}} % {[cart/list] {scale:int} {folderName}}\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
 		os.Exit(-1)
 	}
