@@ -96,10 +96,10 @@ func InitBrand(name string) *Brand {
 	}
 }
 
-func (brand *Brand) GetScalar(percentScale int) (image.Rectangle, error) {
+func (brand *Brand) GetScalar(scale float64) (image.Rectangle, error) {
 
-	if percentScale <= 0 || percentScale > 100 {
-		return image.Rectangle{}, fmt.Errorf("resolution must be (0, 100]")
+	if scale <= 0 || scale > 1 {
+		return image.Rectangle{}, fmt.Errorf("resolution must be (0, 1]")
 	}
 
 	var some Emoji
@@ -108,8 +108,8 @@ func (brand *Brand) GetScalar(percentScale int) (image.Rectangle, error) {
 	}
 
 	return image.Rect(0, 0,
-		some.Bounds().Max.X*percentScale/100,
-		some.Bounds().Max.Y*percentScale/100,
+		int(math.Ceil(float64(some.Bounds().Max.X)*scale)),
+		int(math.Ceil(float64(some.Bounds().Max.Y)*scale)),
 	), nil
 }
 
@@ -193,24 +193,24 @@ func Resize(emoji image.Image, scalar image.Rectangle) (image.Image, error) {
 	return dst, nil
 }
 
-func (emojis EmojiKeg) Chunky(folderName string, percentScale int) error { // depecrated, only use cartridges
+func (emojis EmojiKeg) Chunky(folderName string, scale float64) error { // depecrated, only use cartridges
 
 	for _, brand := range emojis {
-		if err := brand.ExportEmojis(fmt.Sprintf("%s/%s", folderName, brand.name), percentScale); err != nil {
+		if err := brand.ExportEmojis(fmt.Sprintf("%s/%s", folderName, brand.name), scale); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (brand *Brand) ExportEmojis(folderName string, percentScale int) error {
+func (brand *Brand) ExportEmojis(folderName string, scale float64) error {
 
 	fmt.Printf("\nExporting emojis for %s", brand.name)
 
 	var scalar image.Rectangle
 	var err error
 
-	if scalar, err = brand.GetScalar(percentScale); err != nil {
+	if scalar, err = brand.GetScalar(scale); err != nil {
 		return err
 	}
 
@@ -239,24 +239,24 @@ func (brand *Brand) ExportEmojis(folderName string, percentScale int) error {
 	return nil
 }
 
-func (emojis EmojiKeg) Export(folderName string, percentScale int) error {
+func (emojis EmojiKeg) Export(folderName string, scale float64) error {
 
 	for _, brand := range emojis {
-		if err := brand.CreateCartridge(fmt.Sprintf("%s/%s", folderName, brand.name), percentScale); err != nil {
+		if err := brand.CreateCartridge(fmt.Sprintf("%s/%s", folderName, brand.name), scale); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (brand *Brand) CreateCartridge(fileName string, percentScale int) error {
+func (brand *Brand) CreateCartridge(fileName string, scale float64) error {
 
 	fmt.Printf("\nCreating cartridge for %s", brand.name)
 
 	var err error
 	var scalar image.Rectangle
 
-	if scalar, err = brand.GetScalar(percentScale); err != nil {
+	if scalar, err = brand.GetScalar(scale); err != nil {
 		return err
 	}
 

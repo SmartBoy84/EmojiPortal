@@ -13,6 +13,9 @@ import (
 func IsDir(Path string) (bool, error) {
 	file, err := os.Open(Path)
 	if err != nil {
+		if err == os.ErrNotExist {
+			fmt.Print("DOESN'T EXIST")
+		}
 		return false, err
 	}
 
@@ -42,13 +45,13 @@ func main() {
 		os.Exit(-1)
 	}
 
-	scale := 100
+	scale := float64(1)
 	if len(dst) > 1 {
 		nameOpt := strings.Split(dst[1], "scale:")
 		if len(nameOpt) == 2 {
-			if scl, err := strconv.Atoi(nameOpt[1]); err == nil {
+			if scl, err := strconv.ParseFloat(nameOpt[1], 0); err == nil {
 				scale = scl
-				dst = []string{dst[0], dst[2]}
+				dst = append(dst[:1], dst[2:]...)
 			} else {
 				fmt.Printf("[warning] scale specified but error resolving: %s", err)
 			}
