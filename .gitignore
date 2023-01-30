@@ -7,6 +7,8 @@
 
 tests/*
 emojiportal
+cartridges/*
+emojis/*
 
 # Test binary, built with `go test -c`
 *.test
