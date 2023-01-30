@@ -22,7 +22,7 @@ func main() {
 	}
 
 	if len(src) == 0 || len(dest) < 2 || !(dest[0] == "cart" || dest[0] == "list") {
-		fmt.Println("[folderNames... cartridgeFiles... html] % [cart/list] {scale:int} [folderName]\nensure cartridge files have dimensions at the end of their name as (-XxY)")
+		fmt.Println("[folderNames... cartridgeFiles... html{:1 - include modifers}] % [cart/list] {scale:int} [folderName]\nensure cartridge files have dimensions at the end of their name as (-XxY)")
 		os.Exit(-1)
 	}
 
@@ -40,9 +40,18 @@ func main() {
 
 	var emojis EmojiKeg
 
-	if len(src) == 1 && src[0] == "html" {
+	if len(src) == 1 && strings.HasPrefix(src[0], "html") {
 
-		results, err := Scrape()
+		IncludeModifiers := false
+		if split := strings.Split(src[0], ":"); len(split) > 1 {
+			if scl, err := strconv.Atoi(split[1]); err == nil && scl == 1 {
+				IncludeModifiers = true
+			} else {
+				fmt.Println("[warning] include modifers option ignored as it should only be html:1")
+			}
+		}
+		results, err := Scrape(IncludeModifiers)
+
 		if err != nil {
 			panic(err)
 		}
@@ -120,7 +129,7 @@ func main() {
 		}
 	}
 
-	fmt.Print(emojis)
+	fmt.Println(emojis)
 
 	if dest[0] == "cart" {
 		if err := emojis.Export(dest[1], scale); err != nil {
@@ -133,5 +142,5 @@ func main() {
 	} else {
 		panic(fmt.Errorf("destination must be prefixed with cart/list"))
 	}
-	fmt.Printf("\nSuccessfully scraped emojis!\n")
+	fmt.Printf("\n\nSuccessfully scraped and stored emojis!\n")
 }

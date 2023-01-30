@@ -66,7 +66,6 @@ func (scraped ScrapedResult) getIndex(name string) int {
 
 func (scrapedResult *ScrapedResult) AddFromDOM(dom *goquery.Document) (err error) {
 
-	fmt.Print("Parsing")
 	table := dom.Find("table tr")
 
 	var brandNames []string
@@ -76,8 +75,6 @@ func (scrapedResult *ScrapedResult) AddFromDOM(dom *goquery.Document) (err error
 	} else {
 		return fmt.Errorf("no brandnames found")
 	}
-
-	fmt.Print("Extracting")
 
 	relativeTranslation := make(map[int]int) // maps brandNames to master EmojiKeg
 	for i, name := range brandNames {
@@ -200,10 +197,15 @@ func (scrapedResult *ScrapedResult) AddFromDOM(dom *goquery.Document) (err error
 	return err // notice that this doesn't include errors from the scraping routine - that's up to the user to decide to look at
 }
 
-func Scrape() (result ScrapedResult, err error) {
+func Scrape(IncludeModifiers bool) (result ScrapedResult, err error) {
 
 	website := "https://unicode.org/emoji/charts"
-	urls := []string{"full-emoji-list.html", "full-emoji-modifiers.html"}
+	modifiers := "full-emoji-modifiers.html"
+
+	urls := []string{"full-emoji-list.html"}
+	if IncludeModifiers {
+		urls = append(urls, modifiers)
+	}
 
 	for _, page := range urls {
 
@@ -212,7 +214,7 @@ func Scrape() (result ScrapedResult, err error) {
 		var doc *goquery.Document
 
 		url := fmt.Sprintf("%s/%s", website, page)
-		fmt.Printf("Getting %s\n", url)
+		fmt.Printf("Making emojikeg from %s ", url)
 
 		resp, err = http.Get(url)
 		// resp, err = os.Open("tests/" + page)
@@ -228,6 +230,7 @@ func Scrape() (result ScrapedResult, err error) {
 		}
 
 		err = result.AddFromDOM(doc)
+		fmt.Printf("\n")
 	}
 
 	result.emojiStore.StripEmptyEmojis()
