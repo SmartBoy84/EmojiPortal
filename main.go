@@ -10,6 +10,21 @@ import (
 
 // at time of making, I was getting a total of 24755 emojis - aim for this during future dev
 
+func IsDir(Path string) (bool, error) {
+	file, err := os.Open(Path)
+	if err != nil {
+		return false, err
+	}
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		fmt.Print(err)
+		return false, err
+	}
+
+	return fileInfo.IsDir(), nil
+}
+
 func main() {
 	var src, dest []string
 
@@ -21,20 +36,21 @@ func main() {
 		}
 	}
 
-	if len(src) == 0 || len(dest) < 2 || !(dest[0] == "cart" || dest[0] == "list") {
-		fmt.Println("[folderNames... cartridgeFiles... html{:1 - include modifers}] % [cart/list] {scale:int} [folderName]\nensure cartridge files have dimensions at the end of their name as (-XxY)")
+	if len(src) == 0 || len(dest) == 0 || !(dest[0] == "cart" || dest[0] == "list") {
+		fmt.Println("[folderNames... cartridgeFiles... html{:1 - include modifers}] % [cart/list] {scale:int} {folderName}\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
 		os.Exit(-1)
 	}
 
 	scale := 100
-
-	nameOpt := strings.Split(dest[1], "scale:")
-	if len(nameOpt) == 2 {
-		if scl, err := strconv.Atoi(nameOpt[1]); err == nil {
-			scale = scl
-			dest = []string{dest[0], dest[2]}
-		} else {
-			fmt.Printf("[warning] scale specified but error resolving: %s", err)
+	if len(dest) > 1 {
+		nameOpt := strings.Split(dest[1], "scale:")
+		if len(nameOpt) == 2 {
+			if scl, err := strconv.Atoi(nameOpt[1]); err == nil {
+				scale = scl
+				dest = []string{dest[0], dest[2]}
+			} else {
+				fmt.Printf("[warning] scale specified but error resolving: %s", err)
+			}
 		}
 	}
 
@@ -64,21 +80,14 @@ func main() {
 
 	} else {
 		var folders, files []string
+
 		for _, el := range src {
-
-			file, err := os.Open(el)
+			nature, err := IsDir(el)
 			if err != nil {
-				fmt.Printf("[warning] %s isn't a valid path\n", el)
+				fmt.Printf("[warning] %s isn't a valid path: %s\n", el, err)
 				continue
 			}
-
-			fileInfo, err := file.Stat()
-			if err != nil {
-				fmt.Print(err)
-				continue
-			}
-
-			if fileInfo.IsDir() {
+			if nature {
 				folders = append(folders, el)
 			} else {
 				files = append(files, el)
@@ -130,13 +139,35 @@ func main() {
 	}
 
 	fmt.Println(emojis)
+	
+	destinationName := ""
+	if len(dest) >= 2 {
+		nature, err := IsDir(dest[1])
+		if err != nil {
+			fmt.Printf("[warning] destination path specified but error resolving: %s\n", err)
+		} else {
+			if nature {
+				fmt.Println("[warning] destination path specified but not a folder")
+			} else {
+				destinationName = dest[1]
+			}
+		}
+	}
 
 	if dest[0] == "cart" {
-		if err := emojis.Export(dest[1], scale); err != nil {
+		if destinationName == "" {
+			destinationName = "cartridges"
+		}
+
+		if err := emojis.Export(destinationName, scale); err != nil {
 			panic(err)
 		}
 	} else if dest[0] == "list" {
-		if err := emojis.Chunky(dest[1], scale); err != nil {
+		if destinationName == "" {
+			destinationName = "emojis"
+		}
+
+		if err := emojis.Chunky(destinationName, scale); err != nil {
 			panic(err)
 		}
 	} else {
