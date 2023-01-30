@@ -147,7 +147,7 @@ func main() {
 	destinationName := ""
 	if len(dst) >= 2 {
 		nature, err := IsDir(dst[1])
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			fmt.Printf("[warning] destination path specified but error resolving: %s\n", err)
 		} else {
 			if nature {
@@ -157,7 +157,7 @@ func main() {
 			}
 		}
 	}
-
+	fmt.Printf("Destination name %s", destinationName)
 	if dst[0] == "cart" {
 		if destinationName == "" {
 			destinationName = "cartridges"

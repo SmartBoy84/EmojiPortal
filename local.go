@@ -69,7 +69,8 @@ func ReadCartridge(fileName string, brandName string, X int, Y int) (*Brand, err
 	test := regexp.MustCompile(`(.*)-(\d*)x(\d*)$`)
 
 	if len(brandName) == 0 {
-		brandName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
+		brandName = filepath.Base(fileName)
+		brandName = strings.TrimSuffix(brandName, filepath.Ext(brandName))
 	}
 
 	if X == 0 || Y == 0 {
