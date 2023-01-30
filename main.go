@@ -26,28 +26,29 @@ func IsDir(Path string) (bool, error) {
 }
 
 func main() {
-	var src, dest []string
+	src := []string{"html"}
+	dst := []string{"cart"}
 
 	for i, el := range os.Args {
 		if el == "%" {
 			src = os.Args[1:i]
-			dest = os.Args[i+1:]
+			dst = os.Args[i+1:]
 			break
 		}
 	}
 
-	if len(src) == 0 || len(dest) == 0 || !(dest[0] == "cart" || dest[0] == "list") {
-		fmt.Println("[folderNames... cartridgeFiles... html{:1 - include modifers}] % [cart/list] {scale:int} {folderName}\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
+	if len(src) == 0 || len(dst) == 0 || !(dst[0] == "cart" || dst[0] == "list") {
+		fmt.Println("{folderNames... cartridgeFiles... html{:1 - include modifers}} % {[cart/list] {scale:int} {folderName}}\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
 		os.Exit(-1)
 	}
 
 	scale := 100
-	if len(dest) > 1 {
-		nameOpt := strings.Split(dest[1], "scale:")
+	if len(dst) > 1 {
+		nameOpt := strings.Split(dst[1], "scale:")
 		if len(nameOpt) == 2 {
 			if scl, err := strconv.Atoi(nameOpt[1]); err == nil {
 				scale = scl
-				dest = []string{dest[0], dest[2]}
+				dst = []string{dst[0], dst[2]}
 			} else {
 				fmt.Printf("[warning] scale specified but error resolving: %s", err)
 			}
@@ -139,22 +140,22 @@ func main() {
 	}
 
 	fmt.Println(emojis)
-	
+
 	destinationName := ""
-	if len(dest) >= 2 {
-		nature, err := IsDir(dest[1])
+	if len(dst) >= 2 {
+		nature, err := IsDir(dst[1])
 		if err != nil {
 			fmt.Printf("[warning] destination path specified but error resolving: %s\n", err)
 		} else {
 			if nature {
 				fmt.Println("[warning] destination path specified but not a folder")
 			} else {
-				destinationName = dest[1]
+				destinationName = dst[1]
 			}
 		}
 	}
 
-	if dest[0] == "cart" {
+	if dst[0] == "cart" {
 		if destinationName == "" {
 			destinationName = "cartridges"
 		}
@@ -162,7 +163,7 @@ func main() {
 		if err := emojis.Export(destinationName, scale); err != nil {
 			panic(err)
 		}
-	} else if dest[0] == "list" {
+	} else if dst[0] == "list" {
 		if destinationName == "" {
 			destinationName = "emojis"
 		}
