@@ -142,7 +142,7 @@ func main() {
 		}
 	}
 
-	fmt.Println(emojis)
+	fmt.Printf("\n%s\n", emojis)
 
 	destinationName := ""
 	if len(dst) >= 2 {
@@ -157,7 +157,7 @@ func main() {
 			}
 		}
 	}
-	fmt.Printf("Destination name %s", destinationName)
+
 	if dst[0] == "cart" {
 		if destinationName == "" {
 			destinationName = "cartridges"
