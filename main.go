@@ -25,30 +25,35 @@ func IsDir(Path string) (bool, error) {
 	return fileInfo.IsDir(), nil
 }
 
+const seperator = "%"
+
 func main() {
 
 	var src, dst []string
 	dst = []string{"list"}
 
 	for i, el := range os.Args {
-		if el == "%" {
+		if el == seperator {
 			src = os.Args[1:i]
 			dst = os.Args[i+1:]
 			break
 		}
 	}
 
-	if len(src) == 0 {
-		if len(os.Args) > 1 {
-			src = os.Args[1:] // this is all to allow user to just specify a src
-		} else {
-			src = []string{"html"}
-		}
+	if len(os.Args) == 1 || !(len(dst) == 0 || dst[0] == "cart" || dst[0] == "list") {
+		fmt.Println("{folderNames... cartridgeFiles... html{:1 - include modifers}} " + seperator + " {[cart/list] {scale:int} {folderName}}\n\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
+		fmt.Printf("\n")
+		os.Exit(-1)
 	}
 
-	if len(src) == 0 || !(len(dst) == 0 || dst[0] == "cart" || dst[0] == "list") {
-		fmt.Println("{folderNames... cartridgeFiles... html{:1 - include modifers}} % {[cart/list] {scale:int} {folderName}}\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
-		os.Exit(-1)
+	if len(src) == 0 {
+
+		if os.Args[1] == seperator || len(src) == 0 {
+			src = []string{"html"}
+			fmt.Printf("%s\n%s", src, dst)
+		} else {
+			src = os.Args[1:] // this is all to allow user to just specify a src
+		}
 	}
 
 	scale := float64(1)
