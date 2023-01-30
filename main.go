@@ -49,7 +49,7 @@ func main() {
 	if len(dst) > 1 {
 		nameOpt := strings.Split(dst[1], "scale:")
 		if len(nameOpt) == 2 {
-			if scl, err := strconv.ParseFloat(nameOpt[1], 0); err == nil {
+			if scl, err := strconv.ParseFloat(nameOpt[1], 64); err == nil {
 				scale = scl
 				dst = append(dst[:1], dst[2:]...)
 			} else {
