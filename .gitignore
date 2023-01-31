@@ -9,6 +9,7 @@ tests/*
 emojiportal
 cartridges/*
 emojis/*
+output.png
 
 # Test binary, built with `go test -c`
 *.test

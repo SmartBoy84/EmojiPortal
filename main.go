@@ -27,10 +27,25 @@ func IsDir(Path string) (bool, error) {
 
 const seperator = "%"
 
+func TestingGround() {
+
+	brand, err := ReadFolder("emojis/Apple", "")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Cart len %d\n", len(brand.emojis.list))
+	err = brand.Emojify("tests/calc.png", "output.png", 0.5, 0.25)
+	if err != nil {
+		panic(err)
+	}
+	os.Exit(-1)
+}
+
 func main() {
 
+	TestingGround()
+
 	var src, dst []string
-	dst = []string{"list"}
 
 	for i, el := range os.Args {
 		if el == seperator {
@@ -41,16 +56,19 @@ func main() {
 	}
 
 	if len(os.Args) == 1 || !(len(dst) == 0 || dst[0] == "cart" || dst[0] == "list") {
-		fmt.Println("{folderNames... cartridgeFiles... html{:1 - include modifers}} " + seperator + " {[cart/list] {scale:int} {folderName}}\n\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
+		fmt.Println("{folderNames... cartridgeFiles... html{:1 - include modifers} internal} " + seperator + " {[cart/list] {scale:int} {folderName}} or {[convert] [Source image] {target image}}\n\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
 		fmt.Printf("\n")
 		os.Exit(-1)
 	}
 
+	if len(dst) == 0 {
+		dst = []string{"list"}
+	}
+
 	if len(src) == 0 {
 
-		if os.Args[1] == seperator || len(src) == 0 {
+		if os.Args[1] == seperator {
 			src = []string{"html"}
-			fmt.Printf("%s\n%s", src, dst)
 		} else {
 			src = os.Args[1:] // this is all to allow user to just specify a src
 		}

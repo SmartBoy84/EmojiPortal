@@ -14,6 +14,21 @@ import (
 	"golang.org/x/image/draw"
 )
 
+func OpenImage(fileName string) (image.Image, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	imageData, _, err := image.Decode(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return imageData, nil
+}
+
 func ReadFolder(folderPath string, brandName string) (*Brand, error) {
 
 	var err error
@@ -32,14 +47,7 @@ func ReadFolder(folderPath string, brandName string) (*Brand, error) {
 
 	for _, f := range files {
 
-		file, err := os.Open(fmt.Sprintf("%s/%s", folderPath, f.Name()))
-		if err != nil {
-			fmt.Print(err)
-			continue
-		}
-		defer file.Close()
-
-		imageData, _, err := image.Decode(file)
+		imageData, err := OpenImage(fmt.Sprintf("%s/%s", folderPath, f.Name()))
 		if err != nil {
 			fmt.Print(err)
 			continue
@@ -52,13 +60,13 @@ func ReadFolder(folderPath string, brandName string) (*Brand, error) {
 
 			i, err = strconv.Atoi(id[0])
 			if err == nil {
-				brand.emojis.AddAtIndex(id[1], imageData, i)
+				brand.emojis.Add(id[1], imageData, i)
 				continue
 			}
 		}
 
 		fmt.Printf("image successfully read but no id present in name => {[index]__[name]}")
-		brand.emojis.Add(name, imageData)
+		brand.emojis.Add(name, imageData, -1)
 	}
 
 	brand.CleanUp()
@@ -101,15 +109,9 @@ func ReadCartridge(fileName string, brandName string, X int, Y int) (*Brand, err
 	brand := InitBrand(brandName)
 	fmt.Printf("Making emojikeg from %s\n", fileName)
 
-	cartridgeFile, err := os.Open(fileName)
+	imageData, err := OpenImage(fileName)
 	if err != nil {
 		return nil, err
-	}
-	defer cartridgeFile.Close()
-
-	imageData, _, err := image.Decode(cartridgeFile)
-	if err != nil {
-		return brand, err
 	}
 
 	cartridgeSize := imageData.Bounds().Max
@@ -128,7 +130,7 @@ func ReadCartridge(fileName string, brandName string, X int, Y int) (*Brand, err
 		})
 
 		draw.Draw(emoji, emojiSize, imageData, currentPosition.Min, draw.Src)
-		brand.emojis.AddAtIndex(fmt.Sprintf("%d", i), emoji, i)
+		brand.emojis.Add(fmt.Sprintf("%d", i), emoji, i)
 
 		if currentPosition.Max.X >= cartridgeSize.X {
 			currentPosition = currentPosition.Add(shiftDown)

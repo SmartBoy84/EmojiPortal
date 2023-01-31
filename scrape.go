@@ -6,7 +6,8 @@ import (
 	"image"
 	_ "image/gif" // for the purpose of this program we only care about the first frame which is what we get
 	_ "image/png"
-	"net/http"
+	"io"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -49,7 +50,7 @@ func (scraped *ScrapedResult) Store(s *goquery.Selection, name string, imageOrde
 	}
 
 	scraped.emojiStore[brandIndex].mu.Lock()
-	scraped.emojiStore[brandIndex].emojis.AddAtIndex(name, img, imageOrder)
+	scraped.emojiStore[brandIndex].emojis.Add(name, img, imageOrder)
 	scraped.emojiStore[brandIndex].mu.Unlock()
 
 	return nil
@@ -90,7 +91,7 @@ func (scrapedResult *ScrapedResult) AddFromDOM(dom *goquery.Document) (err error
 
 	old := make([]int, len(scrapedResult.emojiStore)) // ugh, icb explaining this - think about it (translates index as it can be called multiple times)
 	for i, el := range scrapedResult.emojiStore {
-		old[i] = len(el.emojis.index)
+		old[i] = len(el.emojis.list)
 	}
 
 	scraperTotem := struct {
@@ -209,22 +210,21 @@ func Scrape(IncludeModifiers bool) (result ScrapedResult, err error) {
 
 	for _, page := range urls {
 
-		var resp *http.Response
-		// var resp io.Reader
+		// var resp *http.Response
+		var resp io.Reader
 		var doc *goquery.Document
 
 		url := fmt.Sprintf("%s/%s", website, page)
 		fmt.Printf("Making emojikeg from %s ", url)
 
-		resp, err = http.Get(url)
-		// resp, err = os.Open("tests/" + page)
+		// resp, err = http.Get(url)
+		resp, err = os.Open("tests/" + page)
 		if err != nil {
 			break
 		}
-		defer resp.Body.Close()
-		// defer resp.Close()
+		// defer resp.Body.Close()
 
-		doc, err = goquery.NewDocumentFromReader(resp.Body) // this is so cool! it reads it as it downloads
+		doc, err = goquery.NewDocumentFromReader(resp) // this is so cool! it reads it as it downloads
 		if err != nil {
 			break
 		}
