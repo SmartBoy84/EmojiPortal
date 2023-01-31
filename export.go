@@ -17,10 +17,12 @@ import (
 	"golang.org/x/image/draw"
 )
 
-func Export(fileName string, img image.Image, quality int) (err error) {
+func Export(fileName string, img image.Image, qualityScale float64) (err error) {
+
+	quality := int(math.Round(qualityScale * float64(100)))
 
 	if quality > 100 {
-		return fmt.Errorf("quality can only be (0,100]")
+		return fmt.Errorf("quality can only be (0,1]")
 	}
 
 	ext := filepath.Ext(fileName)
@@ -37,7 +39,7 @@ func Export(fileName string, img image.Image, quality int) (err error) {
 		}
 		fileName = fmt.Sprintf("%s%s", fileName, ext)
 
-	} else if quality < 100 && ext == ".jpg" {
+	} else if quality < 100 && ext == ".png" {
 		fmt.Printf("[warning] quality value specified with png as the output format so ignored")
 		quality = 100
 	}
@@ -86,7 +88,7 @@ func (brand *Brand) ExportEmojis(folderName string) error {
 	for i, emoji := range brand.emojis.list {
 		img := Resize(emoji.img, scalar)
 
-		if err := Export(fmt.Sprintf("%s/%d__%s", folderName, i, emoji.name), img, 100); err != nil {
+		if err := Export(fmt.Sprintf("%s/%d__%s", folderName, i, emoji.name), img, 1); err != nil {
 			return err
 		}
 	}
@@ -167,13 +169,13 @@ func (brand *Brand) CreateCartridge(fileName string) error {
 		}
 	}
 
-	if err := Export(fmt.Sprintf("%s-%dx%d.png", fileName, scalar.Dx(), scalar.Dy()), canvas, 100); err != nil {
+	if err := Export(fmt.Sprintf("%s-%dx%d.png", fileName, scalar.Dx(), scalar.Dy()), canvas, 1); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (emojis EmojiKeg) Emojify(inputName string, outputPath string, imageScale float64, quality int) error {
+func (emojis EmojiKeg) Emojify(inputName string, outputPath string, imageScale float64, quality float64) error {
 
 	for _, brand := range emojis {
 		if err := brand.Emojify(inputName, fmt.Sprintf("%s/%s", outputPath, brand.name), imageScale, quality); err != nil {
@@ -183,7 +185,7 @@ func (emojis EmojiKeg) Emojify(inputName string, outputPath string, imageScale f
 	return nil
 }
 
-func (brand *Brand) Emojify(inputName string, outputName string, imageScale float64, quality int) error {
+func (brand *Brand) Emojify(inputName string, outputName string, imageScale float64, quality float64) error {
 
 	if len(outputName) == 0 {
 		name := filepath.Base(inputName)

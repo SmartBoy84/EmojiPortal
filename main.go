@@ -38,7 +38,7 @@ func IsDir(Path string) (bool, error) {
 type DstSettings struct {
 	mode, pathName          string
 	escale, iscale          float64
-	quality                 int
+	quality                 float64
 	inputImage, outputImage string
 }
 
@@ -68,7 +68,7 @@ func LoopPathList(paths []string) (filePaths, folderPaths []string) {
 
 func extractDst(cmds []string) *DstSettings {
 
-	settings := &DstSettings{escale: 1, iscale: 1, quality: 100}
+	settings := &DstSettings{escale: 1, iscale: 1, quality: 1}
 	var err error
 
 	if len(cmds) == 0 {
@@ -100,27 +100,22 @@ func extractDst(cmds []string) *DstSettings {
 			if name != "escale" && name != "iscale" && name != "quality" { // bear with me
 				break
 			}
-			if name == "escale" || name == "iscale" {
 
-				var scl float64
-				if scl, err = strconv.ParseFloat(value, 64); err == nil {
-					switch name {
-					case "escale":
-						settings.escale = scl
-					case "iscale":
-						settings.iscale = scl
-					}
-				}
-			} else {
-				var scl int
-				if scl, err = strconv.Atoi(value); err == nil {
+			var scl float64
+			if scl, err = strconv.ParseFloat(value, 64); err == nil {
+				switch name {
+				case "escale":
+					settings.escale = scl
+				case "iscale":
+					settings.iscale = scl
+				case "quality":
 					settings.quality = scl
 				}
-			}
-			if err != nil {
+			} else {
 				fmt.Printf("[warning] %s specified but error resolving: %s", name, err)
 			}
 		}
+		
 		cmds = cmds[x:]
 	}
 
