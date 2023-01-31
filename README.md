@@ -1,5 +1,7 @@
 # EmojiPortal
-Scrape latest set of emojis from Unicode library
+Scrape latest set of emojis from Unicode library and use scraped emojis to convert images to a array of emojis 
+
+\* This project unifies [Emojifier](https://github.com/SmartBoy84/Emojifier) and [EmojiScraper](https://github.com/SmartBoy84/EmojiScraper) + adds a TON more features
 
 `[folderNames... cartridgeFiles... html] % [cart/list] {scale:int} [folderName]`
 
