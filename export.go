@@ -24,6 +24,11 @@ func Export(fileName string, img image.Image, quality int) (err error) {
 	}
 
 	ext := filepath.Ext(fileName)
+	if len(ext) > 0 && ext != ".png" && ext != ".jpg" {
+		// return fmt.Errorf("only support jpg/png formats for output but got [%s]", ext, fileName)
+		ext = "" // remove unknown extens'extension and rely on decode to fail (incase there is a dot in the names)
+	}
+
 	if ext == "" {
 		if quality == 100 {
 			ext = ".png"
@@ -32,10 +37,7 @@ func Export(fileName string, img image.Image, quality int) (err error) {
 		}
 		fileName = fmt.Sprintf("%s%s", fileName, ext)
 
-	} else if ext != ".png" && ext != ".jpg" {
-		return fmt.Errorf("only support jpg/png formats for output but got [%s]", ext)
-	
-		} else if quality < 100 && ext == ".jpg" {
+	} else if quality < 100 && ext == ".jpg" {
 		fmt.Printf("[warning] quality value specified with png as the output format so ignored")
 		quality = 100
 	}
@@ -45,8 +47,6 @@ func Export(fileName string, img image.Image, quality int) (err error) {
 		fmt.Println(err)
 	}
 	defer out.Close()
-
-	fmt.Printf("Exporting to %s\n", fileName)
 
 	switch ext {
 	case ".jpg":

@@ -166,9 +166,9 @@ func extractDst(cmds []string) *DstSettings {
 
 func extractSrc(cmds []string) *SrcSettings {
 
-	settings := &SrcSettings{mode: "internal", modifiers: true} // default settings
-
-	if len(cmds) == 0 || cmds[0] == "internal" {
+	settings := &SrcSettings{modifiers: true} // default settings
+	if len(cmds) == 0 || (len(cmds) == 1 && cmds[0] == "internal") {
+		settings.mode = "internal" // don't set it in struct init as then it won't fail when incorrect stuff is specified
 		return settings
 	}
 
@@ -208,25 +208,27 @@ func main() {
 
 	var err error
 	var src, dst []string
+	
+	var sepI int
 
 	for i, el := range os.Args {
 		if el == seperator {
 			src = os.Args[1:i]
 			dst = os.Args[i+1:]
+			sepI = i // my first hacky solution, is this the end?
 			break
 		}
 	}
 
-	if len(dst) == 0 {
+	if len(dst) == 0 && sepI == 0 { // check for sepI ensures '%' isn't present
 		src = os.Args[1:] // not a mistake, dst comes after the %
 	}
 
 	dstSettings := extractDst(dst)
 	srcSettings := extractSrc(src)
 
-	if srcSettings == nil || dstSettings == nil {
-		fmt.Printf("\n")
-		fmt.Println("For scraping: {folderNames... cartridgeFiles... html{:1 - include modifers} internal} " + seperator + " {[cart/list] {scale:int} {folderName}}\nFor emojifying: {...} % {[convert] {escale:int (emoji scale)} {iscale:int (image scale)} {quality:int} [Source image] {target image}}\n\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
+	if len(os.Args) <= 1 || srcSettings == nil || dstSettings == nil {
+		fmt.Println("For scraping: \n{folderNames... cartridgeFiles... html{:0 - exclude modifers} internal} " + seperator + " {[cart/list] {scale:int} {folderName}}\n\nFor emojifying: \n{...} % {[convert] {escale:int (emoji scale)} {iscale:int (image scale)} {quality:int} [Source image] {target image}}\n\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
 		fmt.Printf("\n")
 
 		os.Exit(-1)
@@ -316,8 +318,10 @@ func main() {
 		}
 
 		err = brand.Emojify(dstSettings.inputImage, dstSettings.outputImage, dstSettings.iscale, dstSettings.quality)
-		fmt.Printf("\nEmojification complete!\n")
 
+		if err == nil {
+			fmt.Printf("\nEmojification complete!\n")
+		}
 	} else {
 		fmt.Printf("\n%s", emojis)
 
@@ -328,7 +332,9 @@ func main() {
 			err = emojis.Chunky(dstSettings.pathName)
 		}
 
-		fmt.Printf("\nSuccessfully scraped and stored emojis!\n")
+		if err == nil {
+			fmt.Printf("\nSuccessfully scraped and stored emojis!\n")
+		}
 	}
 
 	if err != nil {
