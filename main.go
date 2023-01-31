@@ -47,7 +47,6 @@ type SrcSettings struct {
 	mode                string
 	modifiers           bool
 	dirNames, fileNames []string
-	imageSettings       Settings
 }
 
 func LoopPathList(paths []string) (filePaths, folderPaths []string) {
