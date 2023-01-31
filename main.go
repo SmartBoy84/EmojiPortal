@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"strconv"
@@ -9,6 +10,13 @@ import (
 )
 
 const seperator = "%"
+
+//go:embed resources/Apple-72x72.png
+var internalBrandBytes []byte
+
+const internalBrandName = "Apple"
+const internalBrandX = 72
+const internalBrandY = 72
 
 // at time of making, I was getting a total of 24755 emojis - aim for this during future dev
 
@@ -158,10 +166,9 @@ func extractDst(cmds []string) *DstSettings {
 
 func extractSrc(cmds []string) *SrcSettings {
 
-	settings := &SrcSettings{}
+	settings := &SrcSettings{mode: "internal", modifiers: true} // default settings
 
-	if len(cmds) == 0 {
-		settings.mode = "html" // default value
+	if len(cmds) == 0 || cmds[0] == "internal" {
 		return settings
 	}
 
@@ -175,10 +182,10 @@ func extractSrc(cmds []string) *SrcSettings {
 
 		if split := strings.Split(cmds[0], ":"); len(split) > 1 {
 
-			if split[1] == "1" {
-				settings.modifiers = true
+			if split[1] == "0" {
+				settings.modifiers = false
 			} else {
-				fmt.Println("[warning] html modifier extension specified but malformed (should be 1)")
+				fmt.Println("[error] html modifier deactivation specified but malformed (should be 0)")
 				return nil
 			}
 		}
@@ -227,7 +234,14 @@ func main() {
 
 	var emojis EmojiKeg
 
-	if srcSettings.mode == "html" {
+	if srcSettings.mode == "internal" {
+		internalBrand, err := ReadCartridgeFromBytes(internalBrandBytes, internalBrandName, internalBrandX, internalBrandY, Settings{imageScale: dstSettings.escale})
+		if err != nil {
+			panic(err)
+		}
+		emojis = append(emojis, internalBrand)
+
+	} else if srcSettings.mode == "html" {
 		results, err := Scrape(srcSettings.modifiers, Settings{imageScale: dstSettings.escale})
 
 		if err != nil {
@@ -264,7 +278,7 @@ func main() {
 
 			go func(cartridgePath string) {
 
-				brand, err := ReadCartridge(cartridgePath, "", 0, 0, Settings{imageScale: dstSettings.escale})
+				brand, err := ReadCartridgeFromFile(cartridgePath, "", 0, 0, Settings{imageScale: dstSettings.escale})
 				if err != nil {
 					fmt.Println(err)
 					return

@@ -6,10 +6,10 @@ Scrape latest set of emojis from Unicode library and use scraped emojis to conve
 `[folderNames... cartridgeFiles... html] % [cart/list] {scale:int} [folderName]`
 
 ## Examples 
+**In all of the following cases `src` can be `internal`, in which case the embedded cartridge is used - exclusion of any option assumes `internal` (must specify `%` though)**
 ### Scraping
 `./emojiportal` - scrapes all emojis from unicode (excluding modifiers) as cartridges into folder `./cartridges` 
 `./cartridges html:1` - assumes dst name to be `cartridges`
-`./cartridges cartridges/*` 
 `./emojiportal html % cart == ./emojipotatl % cart` 
 `./emojiportal html % cart scale:85 cartridges`  
 `./emojiportal cartridges/* % list scale:65 emojis`

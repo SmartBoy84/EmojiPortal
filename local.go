@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	_ "image/gif" // for the purpose of this program we only care about the first frame which is what we get
@@ -58,7 +59,6 @@ func ReadFolder(folderPath string, brandName string, imageSettings Settings) (*B
 			return nil, err
 		}
 
-		
 		name := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
 
 		id := strings.Split(name, "__")
@@ -80,8 +80,17 @@ func ReadFolder(folderPath string, brandName string, imageSettings Settings) (*B
 	return brand, nil
 }
 
-func ReadCartridge(fileName string, brandName string, X int, Y int, imageSettings Settings) (*Brand, error) {
+func ReadCartridgeFromBytes(imageBytes []byte, brandName string, X int, Y int, imageSettings Settings) (*Brand, error) {
+	img, _, err := image.Decode(bytes.NewReader(imageBytes))
+	if err != nil {
+		return nil, err
+	}
 
+	fmt.Printf("Fetching brand %v from embed", brandName)
+	return ReadCartridge(img, brandName, X, Y, imageSettings)
+}
+
+func ReadCartridgeFromFile(fileName string, brandName string, X int, Y int, imageSettings Settings) (*Brand, error) {
 	test := regexp.MustCompile(`(.*)-(\d*)x(\d*)$`)
 
 	if len(brandName) == 0 {
@@ -113,18 +122,24 @@ func ReadCartridge(fileName string, brandName string, X int, Y int, imageSetting
 		Y = conversion[1]
 	}
 
+	imageData, err := OpenImage(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("Making emojikeg from %s\n", fileName)
+	return ReadCartridge(imageData, brandName, X, Y, imageSettings)
+}
+
+func ReadCartridge(imageData image.Image, brandName string, X int, Y int, imageSettings Settings) (*Brand, error) {
+
 	emojiScalar, err := CreateScalar(image.Rectangle{Max: image.Point{X, Y}}, imageSettings.imageScale)
 	if err != nil {
 		return nil, err
 	}
 
 	brand := InitBrand(brandName)
-	fmt.Printf("Making emojikeg from %s\n", fileName)
 
-	imageData, err := OpenImage(fileName)
-	if err != nil {
-		return nil, err
-	}
 	imageScalar, _ := CreateScalar(imageData, imageSettings.imageScale)
 	imageData = Resize(imageData, imageScalar)
 

@@ -34,7 +34,8 @@ func Export(fileName string, img image.Image, quality int) (err error) {
 
 	} else if ext != ".png" && ext != ".jpg" {
 		return fmt.Errorf("only support jpg/png formats for output but got [%s]", ext)
-	} else if quality < 100 && ext == ".jpg" {
+	
+		} else if quality < 100 && ext == ".jpg" {
 		fmt.Printf("[warning] quality value specified with png as the output format so ignored")
 		quality = 100
 	}
@@ -104,7 +105,7 @@ func (emojis EmojiKeg) Export(folderName string) error {
 
 func (brand *Brand) CreateCartridge(fileName string) error {
 
-	fmt.Printf("\nSaving cartridge %s -> %s", brand.name, fileName)
+	fmt.Printf("Saving cartridge %s -> %s\n", brand.name, fileName)
 
 	var err error
 	var scalar image.Rectangle
