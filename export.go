@@ -187,11 +187,6 @@ func (emojis EmojiKeg) Emojify(inputName string, outputPath string, imageScale f
 
 func (brand *Brand) Emojify(inputName string, outputName string, imageScale float64, quality float64) error {
 
-	if len(outputName) == 0 {
-		name := filepath.Base(inputName)
-		outputName = fmt.Sprintf("%s-%s", strings.TrimSuffix(name, filepath.Ext(name)), brand.name)
-	}
-
 	fmt.Printf("Emojifying %s with brand %s\n", inputName, brand.name)
 
 	imageData, err := OpenImage(inputName)
@@ -202,6 +197,11 @@ func (brand *Brand) Emojify(inputName string, outputName string, imageScale floa
 	img, err := brand.ConvertImage(imageData, imageScale)
 	if err != nil {
 		return err
+	}
+
+	if len(outputName) == 0 {
+		name := filepath.Base(inputName)
+		outputName = fmt.Sprintf("%v-%v-%vx%v", strings.TrimSuffix(name, filepath.Ext(name)), brand.name, img.Bounds().Max.X, img.Bounds().Max.Y)
 	}
 
 	if err := Export(outputName, img, quality); err != nil {
