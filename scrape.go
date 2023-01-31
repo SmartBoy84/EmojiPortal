@@ -25,9 +25,10 @@ func init() {
 }
 
 type ScrapedResult struct {
-	total      int
-	errors     []error
-	emojiStore EmojiKeg
+	total         int
+	errors        []error
+	emojiStore    EmojiKeg
+	imageSettings Settings
 }
 
 func (scraped *ScrapedResult) Store(s *goquery.Selection, name string, imageOrder int, brandIndex int) error {
@@ -46,6 +47,11 @@ func (scraped *ScrapedResult) Store(s *goquery.Selection, name string, imageOrde
 	img, _, err := image.Decode(dec)
 	if err != nil {
 		fmt.Println(b64[1])
+		return err
+	}
+
+	img, err = ApplySettings(img, scraped.imageSettings)
+	if err != nil {
 		return err
 	}
 
@@ -198,7 +204,9 @@ func (scrapedResult *ScrapedResult) AddFromDOM(dom *goquery.Document) (err error
 	return err // notice that this doesn't include errors from the scraping routine - that's up to the user to decide to look at
 }
 
-func Scrape(IncludeModifiers bool) (result ScrapedResult, err error) {
+func Scrape(IncludeModifiers bool, imageSettings Settings) (result ScrapedResult, err error) {
+
+	result.imageSettings = imageSettings
 
 	website := "https://unicode.org/emoji/charts"
 	modifiers := "full-emoji-modifiers.html"

@@ -3,46 +3,61 @@ package main
 import (
 	"fmt"
 	"image"
+	"image/color"
+	"image/jpeg"
 	"image/png"
 	"math"
+	"math/rand"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"golang.org/x/image/draw"
 )
 
-func Export(fileName string, img image.Image) error {
+func Export(fileName string, img image.Image, quality int) (err error) {
+	
+	if quality == 100 {
+		fileName += ".png"
+	} else {
+		fileName += ".jpg"
+	}
+
 	out, err := os.Create(fileName)
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer out.Close()
 
-	if err := png.Encode(out, img); err != nil {
-		return err
+	if quality == 100 {
+		err = png.Encode(out, img)
+	} else {
+		err = jpeg.Encode(out, img, &jpeg.Options{Quality: quality})
 	}
 
-	return nil
+	return err
 }
 
-func (emojis EmojiKeg) Chunky(folderName string, scale float64) error { // depecrated, only use cartridges
+func (emojis EmojiKeg) Chunky(folderName string) error { // depecrated, only use cartridges
 
 	for _, brand := range emojis {
-		if err := brand.ExportEmojis(fmt.Sprintf("%s/%s", folderName, brand.name), scale); err != nil {
+		if err := brand.ExportEmojis(fmt.Sprintf("%s/%s", folderName, brand.name)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (brand *Brand) ExportEmojis(folderName string, scale float64) error {
+func (brand *Brand) ExportEmojis(folderName string) error {
 
 	fmt.Printf("\nExporting emojis for %s", brand.name)
 
 	var scalar image.Rectangle
 	var err error
 
-	if scalar, err = brand.GetScalar(scale); err != nil {
+	if scalar, err = brand.GetScalar(1); err != nil {
 		return err
 	}
 
@@ -53,7 +68,7 @@ func (brand *Brand) ExportEmojis(folderName string, scale float64) error {
 	for i, emoji := range brand.emojis.list {
 		img := Resize(emoji.img, scalar)
 
-		if err := Export(fmt.Sprintf("%s/%d__%s.png", folderName, i, emoji.name), img); err != nil {
+		if err := Export(fmt.Sprintf("%s/%d__%s", folderName, i, emoji.name), img, 100); err != nil {
 			return err
 		}
 	}
@@ -61,24 +76,24 @@ func (brand *Brand) ExportEmojis(folderName string, scale float64) error {
 	return nil
 }
 
-func (emojis EmojiKeg) Export(folderName string, scale float64) error {
+func (emojis EmojiKeg) Export(folderName string) error {
 
 	for _, brand := range emojis {
-		if err := brand.CreateCartridge(fmt.Sprintf("%s/%s", folderName, brand.name), scale); err != nil {
+		if err := brand.CreateCartridge(fmt.Sprintf("%s/%s", folderName, brand.name)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (brand *Brand) CreateCartridge(fileName string, scale float64) error {
+func (brand *Brand) CreateCartridge(fileName string) error {
 
 	fmt.Printf("\nCreating cartridge for %s", brand.name)
 
 	var err error
 	var scalar image.Rectangle
 
-	if scalar, err = brand.GetScalar(scale); err != nil {
+	if scalar, err = brand.GetScalar(1); err != nil {
 		return err
 	}
 
@@ -103,7 +118,7 @@ func (brand *Brand) CreateCartridge(fileName string, scale float64) error {
 		scalar.Dy() * int(math.Ceil(((whole*tail)+math.Pow(whole, 2))/whole)+1), // simply the formula applied (idk why +1 row is needed)
 	}
 
-	canvas := GetTransparent(image.Rectangle{
+	canvas := GetTransparent(color.RGBA{}, image.Rectangle{
 		image.Point{0, 0},
 		canvasSize,
 	})
@@ -135,8 +150,101 @@ func (brand *Brand) CreateCartridge(fileName string, scale float64) error {
 		}
 	}
 
-	if err := Export(fmt.Sprintf("%s-%dx%d.png", fileName, scalar.Dx(), scalar.Dy()), canvas); err != nil {
+	if err := Export(fmt.Sprintf("%s-%dx%d", fileName, scalar.Dx(), scalar.Dy()), canvas, 100); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (emojis EmojiKeg) Emojify(inputName string, outputPath string, imageScale float64, quality int) error {
+
+	for _, brand := range emojis {
+		if err := brand.Emojify(inputName, fmt.Sprintf("%s/%s", outputPath, brand.name), imageScale, quality); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (brand *Brand) Emojify(inputName string, outputName string, imageScale float64, quality int) error {
+	imageData, err := OpenImage(inputName)
+	if err != nil {
+		return err
+	}
+
+	img, err := brand.ConvertImage(imageData, imageScale)
+	if err != nil {
+		return err
+	}
+	if outputName == "" {
+		name := filepath.Base(inputName)
+		outputName = fmt.Sprintf("%s-%s", strings.TrimSuffix(name, filepath.Ext(name)), brand.name)
+	}
+
+	if err := Export(outputName, img, quality); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (brand *Brand) ConvertImage(img image.Image, imageScale float64) (image.Image, error) {
+
+	imageScalar, err := CreateScalar(img, imageScale)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(brand.emojis.list) == 0 {
+		return nil, fmt.Errorf("no emojis found")
+	}
+
+	emojiScalar := brand.emojis.list[0].img.Bounds()
+
+	canvasSize := image.Rectangle{Max: image.Point{
+		X: imageScalar.Dx() * emojiScalar.Dx(),
+		Y: imageScalar.Dy() * emojiScalar.Dy(),
+	}}
+
+	currentPosition := image.Rectangle{Min: image.Point{0, 0}, Max: emojiScalar.Max}
+	emojified := GetTransparent(color.RGBA{}, canvasSize)
+	source := Resize(img, imageScalar)
+
+	rand.Seed(time.Now().Unix())
+	randomConstantFits := make(map[color.Color]*Emoji)
+
+	LoopPixel(source, func(col []uint8) bool {
+		pixColor := BasicToColor(col)
+
+		var bestRandFit *Emoji
+		var ok bool
+
+		// this ensures a consistency in colour but still creates a different image each time
+		if bestRandFit, ok = randomConstantFits[pixColor]; !ok {
+
+			potentialFits := brand.emojis.colorIndex[brand.emojis.colors.Index(pixColor)]
+			bestRandFit = potentialFits[rand.Intn(len(potentialFits))]
+
+			randomConstantFits[pixColor] = bestRandFit
+		}
+
+		// translators
+		shiftRight := image.Point{emojiScalar.Dx(), 0}
+		shiftDown := image.Point{0, emojiScalar.Dy()}
+
+		draw.Draw(emojified, currentPosition, bestRandFit.img, bestRandFit.img.Bounds().Min, draw.Over)
+
+		if currentPosition.Max.X >= canvasSize.Dx() {
+			currentPosition = currentPosition.Add(shiftDown)
+
+			currentPosition.Min.X = 0
+			currentPosition.Max.X = emojiScalar.Dx()
+
+		} else {
+			currentPosition = currentPosition.Add(shiftRight)
+		}
+		return false
+	})
+
+	return emojified, nil
 }

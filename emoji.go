@@ -10,6 +10,11 @@ import (
 	"golang.org/x/image/draw"
 )
 
+type Settings struct {
+	backgroundColor color.RGBA
+	imageScale      float64
+}
+
 type EmojiKeg []*Brand
 
 type Brand struct {
@@ -51,7 +56,7 @@ func init() {
 func LoopPixel(img image.Image, cb func(col []uint8) bool) bool {
 
 	bounds := img.Bounds()
-	rgba := GetTransparent(bounds)
+	rgba := GetTransparent(color.RGBA{}, bounds)
 	draw.Draw(rgba, bounds, img, bounds.Min, draw.Over)
 
 	index := 0
@@ -86,14 +91,16 @@ func (emoji *Emoji) GetAverage() color.Color {
 	for i := range colorSum {
 		averageColor[i] = uint8(math.Round(float64(colorSum[i]) / float64(imgSize)))
 	}
+	averageColor[3] = 255
+	// return color.RGBA{R: averageColor[0], G: averageColor[1], B: averageColor[2], A: 0}
 	return BasicToColor(averageColor)
 }
 
-func GetTransparent(dimensions image.Rectangle) *image.RGBA {
+func GetTransparent(col color.Color, dimensions image.Rectangle) *image.RGBA {
 
 	canvas := image.NewRGBA(dimensions)
 	draw.Draw(canvas, canvas.Bounds(),
-		&image.Uniform{C: color.RGBA{}}, // color.RGBA{} = color.RGBA{R:0, G:0, B:0, A:0} => A:0 = transparent
+		&image.Uniform{C: col}, // color.RGBA{} = color.RGBA{R:0, G:0, B:0, A:0} => A:0 = transparent
 		image.Point{}, draw.Src)
 
 	return canvas
@@ -209,7 +216,7 @@ func (brand *Brand) CleanUp() { // mainly for: 1. reading cartridges (there will
 
 	newList := []*Emoji{}
 	for _, el := range brand.emojis.list {
-		if el != nil {
+		if el != nil && el.img != nil {
 			newList = append(newList, el)
 		}
 	}
@@ -217,8 +224,10 @@ func (brand *Brand) CleanUp() { // mainly for: 1. reading cartridges (there will
 
 	// now, let's clean up any emojis of uniform colour
 	deleted := 0
-	for i, emoji := range brand.emojis.list {
-		col := ColorToBasic(emoji.img.At(10, 12))
+
+	for i, emoji := range newList {
+
+		col := ColorToBasic(emoji.img.At(0, 0))
 
 		if LoopPixel(emoji.img, func(target []uint8) bool {
 			for i, c := range target {
@@ -243,6 +252,23 @@ func (keg EmojiKeg) StripEmptyEmojis() {
 	for _, brand := range keg {
 		brand.CleanUp()
 	}
+}
+
+func ApplySettings(img image.Image, imageSettings Settings) (image.Image, error) {
+	scalar, err := CreateScalar(img, imageSettings.imageScale)
+	if err != nil {
+		return nil, err
+	}
+
+	imageData := Resize(img, scalar)
+
+	emoji := GetTransparent(imageSettings.backgroundColor, image.Rectangle{
+		image.Point{0, 0},
+		imageData.Bounds().Max,
+	})
+
+	draw.Draw(emoji, emoji.Bounds(), imageData, image.Point{0, 0}, draw.Over)
+	return imageData, nil
 }
 
 func Resize(emoji image.Image, scalar image.Rectangle) image.Image {

@@ -29,7 +29,7 @@ func OpenImage(fileName string) (image.Image, error) {
 	return imageData, nil
 }
 
-func ReadFolder(folderPath string, brandName string) (*Brand, error) {
+func ReadFolder(folderPath string, brandName string, imageSettings Settings) (*Brand, error) {
 
 	var err error
 
@@ -52,6 +52,13 @@ func ReadFolder(folderPath string, brandName string) (*Brand, error) {
 			fmt.Print(err)
 			continue
 		}
+
+		emoji, err := ApplySettings(imageData, imageSettings)
+		if err != nil {
+			return nil, err
+		}
+
+		
 		name := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
 
 		id := strings.Split(name, "__")
@@ -60,20 +67,20 @@ func ReadFolder(folderPath string, brandName string) (*Brand, error) {
 
 			i, err = strconv.Atoi(id[0])
 			if err == nil {
-				brand.emojis.Add(id[1], imageData, i)
+				brand.emojis.Add(id[1], emoji, i)
 				continue
 			}
 		}
 
 		fmt.Printf("image successfully read but no id present in name => {[index]__[name]}")
-		brand.emojis.Add(name, imageData, -1)
+		brand.emojis.Add(name, emoji, -1)
 	}
 
 	brand.CleanUp()
 	return brand, nil
 }
 
-func ReadCartridge(fileName string, brandName string, X int, Y int) (*Brand, error) {
+func ReadCartridge(fileName string, brandName string, X int, Y int, imageSettings Settings) (*Brand, error) {
 
 	test := regexp.MustCompile(`(.*)-(\d*)x(\d*)$`)
 
@@ -106,6 +113,11 @@ func ReadCartridge(fileName string, brandName string, X int, Y int) (*Brand, err
 		Y = conversion[1]
 	}
 
+	emojiScalar, err := CreateScalar(image.Rectangle{Max: image.Point{X, Y}}, imageSettings.imageScale)
+	if err != nil {
+		return nil, err
+	}
+
 	brand := InitBrand(brandName)
 	fmt.Printf("Making emojikeg from %s\n", fileName)
 
@@ -113,23 +125,24 @@ func ReadCartridge(fileName string, brandName string, X int, Y int) (*Brand, err
 	if err != nil {
 		return nil, err
 	}
+	imageScalar, _ := CreateScalar(imageData, imageSettings.imageScale)
+	imageData = Resize(imageData, imageScalar)
 
 	cartridgeSize := imageData.Bounds().Max
-	emojiSize := image.Rect(0, 0, X, Y)
-	currentPosition := image.Rectangle{Min: image.Point{0, 0}, Max: emojiSize.Max}
+	currentPosition := image.Rectangle{Min: image.Point{0, 0}, Max: emojiScalar.Max}
 
 	// translators
-	shiftRight := image.Point{emojiSize.Dx(), 0}
-	shiftDown := image.Point{0, emojiSize.Dy()}
+	shiftRight := image.Point{emojiScalar.Dx(), 0}
+	shiftDown := image.Point{0, emojiScalar.Dy()}
 
 	for i := 0; ; i++ {
 
-		emoji := GetTransparent(image.Rectangle{
+		emoji := GetTransparent(imageSettings.backgroundColor, image.Rectangle{
 			image.Point{0, 0},
-			emojiSize.Max,
+			emojiScalar.Max,
 		})
 
-		draw.Draw(emoji, emojiSize, imageData, currentPosition.Min, draw.Src)
+		draw.Draw(emoji, emojiScalar, imageData, currentPosition.Min, draw.Src)
 		brand.emojis.Add(fmt.Sprintf("%d", i), emoji, i)
 
 		if currentPosition.Max.X >= cartridgeSize.X {
@@ -139,7 +152,7 @@ func ReadCartridge(fileName string, brandName string, X int, Y int) (*Brand, err
 			}
 
 			currentPosition.Min.X = 0
-			currentPosition.Max.X = emojiSize.Dx()
+			currentPosition.Max.X = emojiScalar.Dx()
 
 		} else {
 			currentPosition = currentPosition.Add(shiftRight)
