@@ -3,7 +3,8 @@ Scrape latest set of emojis from Unicode library and use scraped emojis to conve
 
 \* This project unifies [Emojifier](https://github.com/SmartBoy84/Emojifier) and [EmojiScraper](https://github.com/SmartBoy84/EmojiScraper) + adds a TON more features
 
-`[folderNames... cartridgeFiles... html] % [cart/list] {scale:int} [folderName]`
+`[folderNames... cartridgeFiles... html internal] % [cart/list] {scale:int} [folderName]`  
+`{...} % {emojify {escale:int (emoji scale)} {iscale:int (image scale)} {quality:int} [Source image] {target image}}`    
 
 ## Explanation
 - In all of the following cases `src` can be `internal`, in which case the embedded cartridge is used - exclusion of any option assumes `internal` (must specify `%` though)
@@ -12,12 +13,12 @@ Scrape latest set of emojis from Unicode library and use scraped emojis to conve
 
 ## Examples 
 ### Scraping 
-`./cartridges html:1`
-`./cartridges internal`
-`./emojiportal html % cart == ./emojipotatl % cart` 
+`./cartridges html:1`  
+`./cartridges internal`  
+`./emojiportal html % cart == ./emojipotatl % cart`   
 `./emojiportal html % cart scale:85 cartridges`  
-`./emojiportal cartridges/* % list scale:65 emojis`
+`./emojiportal cartridges/* % list scale:65 emojis`  
 
 ### Emojifying
-`./emojiportal html % emojify iscale:0.5 escale:0.2 quality:75 in.png`
-`./emojiportal cartridges/Apple.png % emojify iscale:0.5 escale:0.2 quality:75 in.png`
+`./emojiportal html % emojify iscale:0.5 escale:0.2 quality:75 in.png`  
+`./emojiportal cartridges/Apple.png % emojify iscale:0.5 escale:0.2 quality:75 in.png`  

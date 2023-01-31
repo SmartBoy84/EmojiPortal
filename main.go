@@ -223,7 +223,7 @@ func main() {
 	srcSettings := extractSrc(src)
 
 	if len(os.Args) <= 1 || srcSettings == nil || dstSettings == nil {
-		fmt.Println("For scraping: \n{folderNames... cartridgeFiles... html{:0 - exclude modifers} internal} " + seperator + " {[cart/list] {scale:int} {folderName}}\n\nFor emojifying: \n{...} % {[convert] {escale:int (emoji scale)} {iscale:int (image scale)} {quality:int} [Source image] {target image}}\n\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
+		fmt.Println("For scraping: \n{folderNames... cartridgeFiles... html{:0 - exclude modifers} internal} " + seperator + " {[cart/list] {scale:int} {folderName}}\n\nFor emojifying: \n{...} % {emojify {escale:int (emoji scale)} {iscale:int (image scale)} {quality:int} [Source image] {target image}}\n\nensure cartridge files have dimensions at the end of their name as (-XxY)\n*curly braces indicate optional inputs")
 		fmt.Printf("\n")
 
 		os.Exit(-1)
