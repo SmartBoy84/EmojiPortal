@@ -184,13 +184,17 @@ func (emojis EmojiKeg) String() string {
 	list := ""
 	total := 0
 	for _, brand := range emojis {
-		list += fmt.Sprintf("%s - %d emojis\n", brand.name, len(brand.emojis.list))
+		list += brand.String()
 		total += len(brand.emojis.list)
 	}
 	if len(emojis) > 1 {
 		list += fmt.Sprintf("total - %d", total)
 	}
 	return list
+}
+
+func (brand *Brand) String() string {
+	return fmt.Sprintf("%v - %v emojis", brand.name, len(brand.emojis.list))
 }
 
 func ColorToBasic(col color.Color) []uint8 {

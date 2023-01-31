@@ -208,7 +208,7 @@ func main() {
 
 	var err error
 	var src, dst []string
-	
+
 	var sepI int
 
 	for i, el := range os.Args {
@@ -302,16 +302,28 @@ func main() {
 		var brand *Brand
 
 		if len(emojis) > 1 {
-			menu := NewMenu("Pick a brand:")
-			index := make(map[string]*Brand)
+
+			brandIndex := []*Brand{}
+			input := "\n\nSelect brand:\n"
 
 			for i, brand := range emojis {
-				in := fmt.Sprint(i)
-				menu.AddItem(fmt.Sprintf("%s - %d emojis", brand.name, len(brand.emojis.list)), in)
-				index[in] = brand
+				name := brand.String()
+				brandIndex = append(brandIndex, brand)
+				input += fmt.Sprintf("%v. %v\n", i+1, name)
 			}
-			choice := menu.Display()
-			brand = index[choice]
+
+			fmt.Println(input)
+			var i int
+			for {
+				fmt.Printf("Input a number [%d,% d] - ", 1, len(brandIndex))
+				fmt.Scan(&i)
+				if i > 0 && i <= len(brandIndex) {
+					i--
+					break
+				}
+			}
+
+			brand = brandIndex[i]
 
 		} else {
 			brand = emojis[0]
