@@ -18,11 +18,25 @@ import (
 )
 
 func Export(fileName string, img image.Image, quality int) (err error) {
-	
-	if quality == 100 {
-		fileName += ".png"
-	} else {
-		fileName += ".jpg"
+
+	if quality > 100 {
+		return fmt.Errorf("quality can only be (0,100]")
+	}
+
+	ext := filepath.Ext(fileName)
+	if ext == "" {
+		if quality == 100 {
+			ext = ".png"
+		} else {
+			ext = ".jpg"
+		}
+		fileName = fmt.Sprintf("%s%s", fileName, ext)
+
+	} else if ext != ".png" && ext != ".jpg" {
+		return fmt.Errorf("only support jpg/png formats for output but got [%s]", ext)
+	} else if quality < 100 && ext == ".jpg" {
+		fmt.Printf("[warning] quality value specified with png as the output format so ignored")
+		quality = 100
 	}
 
 	out, err := os.Create(fileName)
@@ -31,10 +45,13 @@ func Export(fileName string, img image.Image, quality int) (err error) {
 	}
 	defer out.Close()
 
-	if quality == 100 {
-		err = png.Encode(out, img)
-	} else {
+	fmt.Printf("Exporting to %s\n", fileName)
+
+	switch ext {
+	case ".jpg":
 		err = jpeg.Encode(out, img, &jpeg.Options{Quality: quality})
+	case ".png":
+		err = png.Encode(out, img)
 	}
 
 	return err
@@ -77,7 +94,6 @@ func (brand *Brand) ExportEmojis(folderName string) error {
 }
 
 func (emojis EmojiKeg) Export(folderName string) error {
-
 	for _, brand := range emojis {
 		if err := brand.CreateCartridge(fmt.Sprintf("%s/%s", folderName, brand.name)); err != nil {
 			return err
@@ -88,7 +104,7 @@ func (emojis EmojiKeg) Export(folderName string) error {
 
 func (brand *Brand) CreateCartridge(fileName string) error {
 
-	fmt.Printf("\nCreating cartridge for %s", brand.name)
+	fmt.Printf("\nSaving cartridge %s -> %s", brand.name, fileName)
 
 	var err error
 	var scalar image.Rectangle
@@ -150,7 +166,7 @@ func (brand *Brand) CreateCartridge(fileName string) error {
 		}
 	}
 
-	if err := Export(fmt.Sprintf("%s-%dx%d", fileName, scalar.Dx(), scalar.Dy()), canvas, 100); err != nil {
+	if err := Export(fmt.Sprintf("%s-%dx%d.png", fileName, scalar.Dx(), scalar.Dy()), canvas, 100); err != nil {
 		return err
 	}
 	return nil
@@ -167,6 +183,14 @@ func (emojis EmojiKeg) Emojify(inputName string, outputPath string, imageScale f
 }
 
 func (brand *Brand) Emojify(inputName string, outputName string, imageScale float64, quality int) error {
+
+	if len(outputName) == 0 {
+		name := filepath.Base(inputName)
+		outputName = fmt.Sprintf("%s-%s", strings.TrimSuffix(name, filepath.Ext(name)), brand.name)
+	}
+
+	fmt.Printf("Emojifying %s with brand %s\n", inputName, brand.name)
+
 	imageData, err := OpenImage(inputName)
 	if err != nil {
 		return err
@@ -175,10 +199,6 @@ func (brand *Brand) Emojify(inputName string, outputName string, imageScale floa
 	img, err := brand.ConvertImage(imageData, imageScale)
 	if err != nil {
 		return err
-	}
-	if outputName == "" {
-		name := filepath.Base(inputName)
-		outputName = fmt.Sprintf("%s-%s", strings.TrimSuffix(name, filepath.Ext(name)), brand.name)
 	}
 
 	if err := Export(outputName, img, quality); err != nil {

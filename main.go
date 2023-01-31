@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"image/color"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 )
+
+const seperator = "%"
 
 // at time of making, I was getting a total of 24755 emojis - aim for this during future dev
 
@@ -24,23 +25,6 @@ func IsDir(Path string) (bool, error) {
 	}
 
 	return fileInfo.IsDir(), nil
-}
-
-const seperator = "%"
-
-func TestingGround() {
-
-	brand, err := ReadFolder("emojis/Apple", "", Settings{backgroundColor: color.RGBA{A: 255}, imageScale: 0.1})
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("Cart len %d\n", len(brand.emojis.list))
-	err = brand.Emojify("tests/calc.png", "output.png", 1, 100)
-	if err != nil {
-		panic(err)
-	}
-	os.Exit(-1)
 }
 
 type DstSettings struct {
@@ -76,11 +60,11 @@ func LoopPathList(paths []string) (filePaths, folderPaths []string) {
 
 func extractDst(cmds []string) *DstSettings {
 
-	settings := &DstSettings{escale: 1}
+	settings := &DstSettings{escale: 1, iscale: 1, quality: 100}
 	var err error
 
 	if len(cmds) == 0 {
-		return nil
+		cmds = append(cmds, "cart") // default value
 	}
 
 	if cmds[0] == "cart" || cmds[0] == "list" || cmds[0] == "emojify" {
@@ -92,14 +76,16 @@ func extractDst(cmds []string) *DstSettings {
 	}
 
 	if settings.mode == "emojify" {
-		var i int
+		var x int
 
-		for i = range cmds {
+		for i := range cmds {
 			option := strings.Split(cmds[i], ":")
 
 			if len(option) <= 1 {
 				continue
 			}
+
+			x++
 			name := option[0]
 			value := option[1]
 
@@ -123,37 +109,40 @@ func extractDst(cmds []string) *DstSettings {
 					settings.quality = scl
 				}
 			}
-
 			if err != nil {
 				fmt.Printf("[warning] %s specified but error resolving: %s", name, err)
 			}
 		}
-
-		cmds = cmds[i:]
+		cmds = cmds[x:]
 	}
 
 	filePaths, folderPaths := LoopPathList(cmds)
 
 	if settings.mode == "emojify" {
-		if len(filePaths) == 0 || len(filePaths) > 2 {
+		if len(cmds) == 0 || len(cmds) > 2 || len(filePaths) != 1 || len(folderPaths) > 0 {
 
 			if len(folderPaths) > 0 {
-				fmt.Print("[warning] tried to input folder path(s) as input/output image path")
+				fmt.Printf("[error] tried to input folder path(s) as input/output image path: %s\n", folderPaths)
 			}
-			fmt.Print("for emojify mode, specify atleast an input image and at max a second path for output image")
+			if len(filePaths) > 1 {
+				fmt.Printf("[error] refuse to overwrite existing file(s): %s\n", filePaths)
+			}
+			fmt.Print(filePaths, cmds, folderPaths)
+			fmt.Println("for emojify mode, specify atleast an input image and at max a second path for output image")
 			return nil
 		}
 
 		settings.inputImage = filePaths[0]
-		if len(filePaths) == 2 {
-			settings.outputImage = filePaths[1]
+		if len(cmds) == 2 {
+			settings.outputImage = cmds[1]
 		}
 	} else {
-		if len(filePaths) == len(cmds) && len(cmds) > 0 {
+		if len(filePaths) > 0 {
 			fmt.Println("for list/cart, only specify a folder to export them to (maybe you've specified a file path?)")
 			return nil
 		}
-		if len(folderPaths) == 0 {
+
+		if len(cmds) == 0 {
 			switch settings.mode {
 			case "cart":
 				settings.pathName = "cartridges"
@@ -164,7 +153,6 @@ func extractDst(cmds []string) *DstSettings {
 			settings.pathName = cmds[0]
 		}
 	}
-
 	return settings
 }
 
@@ -173,7 +161,7 @@ func extractSrc(cmds []string) *SrcSettings {
 	settings := &SrcSettings{}
 
 	if len(cmds) == 0 {
-		settings.mode = "html"
+		settings.mode = "html" // default value
 		return settings
 	}
 
@@ -211,7 +199,6 @@ func extractSrc(cmds []string) *SrcSettings {
 
 func main() {
 
-	// TestingGround()
 	var err error
 	var src, dst []string
 
@@ -221,6 +208,10 @@ func main() {
 			dst = os.Args[i+1:]
 			break
 		}
+	}
+
+	if len(dst) == 0 {
+		src = os.Args[1:] // not a mistake, dst comes after the %
 	}
 
 	dstSettings := extractDst(dst)
@@ -292,21 +283,29 @@ func main() {
 
 	if dstSettings.mode == "emojify" {
 
-		menu := NewMenu("Pick a brand:")
-		index := make(map[string]*Brand)
+		var brand *Brand
 
-		for i, brand := range emojis {
-			in := fmt.Sprint(i)
-			menu.AddItem(fmt.Sprintf("%s - %d emojis", brand.name, len(brand.emojis.list)), in)
-			index[in] = brand
+		if len(emojis) > 1 {
+			menu := NewMenu("Pick a brand:")
+			index := make(map[string]*Brand)
+
+			for i, brand := range emojis {
+				in := fmt.Sprint(i)
+				menu.AddItem(fmt.Sprintf("%s - %d emojis", brand.name, len(brand.emojis.list)), in)
+				index[in] = brand
+			}
+			choice := menu.Display()
+			brand = index[choice]
+
+		} else {
+			brand = emojis[0]
 		}
-		choice := menu.Display()
 
-		err = index[choice].Emojify(dstSettings.inputImage, dstSettings.outputImage, dstSettings.iscale, dstSettings.quality)
-		fmt.Println("Emojification complete!")
+		err = brand.Emojify(dstSettings.inputImage, dstSettings.outputImage, dstSettings.iscale, dstSettings.quality)
+		fmt.Printf("\nEmojification complete!\n")
 
 	} else {
-		fmt.Printf("\n%s\n", emojis)
+		fmt.Printf("\n%s", emojis)
 
 		switch dstSettings.mode {
 		case "cart":
@@ -315,7 +314,7 @@ func main() {
 			err = emojis.Chunky(dstSettings.pathName)
 		}
 
-		fmt.Printf("\n\nSuccessfully scraped and stored emojis!\n")
+		fmt.Printf("\nSuccessfully scraped and stored emojis!\n")
 	}
 
 	if err != nil {

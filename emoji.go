@@ -147,7 +147,7 @@ func InitBrand(name string) *Brand {
 
 func CreateScalar(img image.Image, scale float64) (image.Rectangle, error) {
 	if scale <= 0 || scale > 1 {
-		return image.Rectangle{}, fmt.Errorf("resolution must be (0, 1]")
+		return image.Rectangle{}, fmt.Errorf("resolution must be (0, 1]: %v", scale)
 	}
 
 	return image.Rect(0, 0,
@@ -187,7 +187,10 @@ func (emojis EmojiKeg) String() string {
 		list += fmt.Sprintf("%s - %d emojis\n", brand.name, len(brand.emojis.list))
 		total += len(brand.emojis.list)
 	}
-	return list + fmt.Sprintf("total - %d", total)
+	if len(emojis) > 1 {
+		list += fmt.Sprintf("total - %d", total)
+	}
+	return list
 }
 
 func ColorToBasic(col color.Color) []uint8 {
