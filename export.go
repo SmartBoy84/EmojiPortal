@@ -229,8 +229,11 @@ func (brand *Brand) ConvertImage(img image.Image, imageScale float64) (image.Ima
 		Y: imageScalar.Dy() * emojiScalar.Dy(),
 	}}
 
-	currentPosition := image.Rectangle{Min: image.Point{0, 0}, Max: emojiScalar.Max}
 	emojified := GetTransparent(color.RGBA{}, canvasSize)
+	fmt.Printf("New dimensions: %s\n", emojified.Bounds().Max)
+
+
+	currentPosition := image.Rectangle{Min: image.Point{0, 0}, Max: emojiScalar.Max}
 	source := Resize(img, imageScalar)
 
 	rand.Seed(time.Now().Unix())

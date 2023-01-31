@@ -86,7 +86,7 @@ func ReadCartridgeFromBytes(imageBytes []byte, brandName string, X int, Y int, i
 		return nil, err
 	}
 
-	fmt.Printf("Fetching brand %v from embed", brandName)
+	fmt.Printf("Fetching brand %v from embed\n", brandName)
 	return ReadCartridge(img, brandName, X, Y, imageSettings)
 }
 
@@ -157,7 +157,7 @@ func ReadCartridge(imageData image.Image, brandName string, X int, Y int, imageS
 			emojiScalar.Max,
 		})
 
-		draw.Draw(emoji, emojiScalar, imageData, currentPosition.Min, draw.Src)
+		draw.Draw(emoji, emojiScalar, imageData, currentPosition.Min, draw.Over)
 		brand.emojis.Add(fmt.Sprintf("%d", i), emoji, i)
 
 		if currentPosition.Max.X >= cartridgeSize.X {

@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"image/color"
 	"os"
 	"strconv"
 	"strings"
@@ -46,6 +47,7 @@ type SrcSettings struct {
 	mode                string
 	modifiers           bool
 	dirNames, fileNames []string
+	imageSettings       Settings
 }
 
 func LoopPathList(paths []string) (filePaths, folderPaths []string) {
@@ -115,7 +117,7 @@ func extractDst(cmds []string) *DstSettings {
 				fmt.Printf("[warning] %s specified but error resolving: %s", name, err)
 			}
 		}
-		
+
 		cmds = cmds[x:]
 	}
 
@@ -229,17 +231,22 @@ func main() {
 		os.Exit(-1)
 	}
 
+	imageSettings := Settings{imageScale: dstSettings.escale}
+	if dstSettings.mode == "emojify" {
+		imageSettings.backgroundColor = color.RGBA{A: 255}
+	}
+
 	var emojis EmojiKeg
 
 	if srcSettings.mode == "internal" {
-		internalBrand, err := ReadCartridgeFromBytes(internalBrandBytes, internalBrandName, internalBrandX, internalBrandY, Settings{imageScale: dstSettings.escale})
+		internalBrand, err := ReadCartridgeFromBytes(internalBrandBytes, internalBrandName, internalBrandX, internalBrandY, imageSettings)
 		if err != nil {
 			panic(err)
 		}
 		emojis = append(emojis, internalBrand)
 
 	} else if srcSettings.mode == "html" {
-		results, err := Scrape(srcSettings.modifiers, Settings{imageScale: dstSettings.escale})
+		results, err := Scrape(srcSettings.modifiers, imageSettings)
 
 		if err != nil {
 			panic(err)
@@ -259,7 +266,7 @@ func main() {
 
 			go func(folderPath string) {
 
-				brand, err := ReadFolder(folderPath, "", Settings{imageScale: dstSettings.escale}) // allow custom names for each path
+				brand, err := ReadFolder(folderPath, "", imageSettings) // allow custom names for each path
 				if err != nil {
 					fmt.Println(err)
 					return
@@ -275,7 +282,7 @@ func main() {
 
 			go func(cartridgePath string) {
 
-				brand, err := ReadCartridgeFromFile(cartridgePath, "", 0, 0, Settings{imageScale: dstSettings.escale})
+				brand, err := ReadCartridgeFromFile(cartridgePath, "", 0, 0, imageSettings)
 				if err != nil {
 					fmt.Println(err)
 					return
