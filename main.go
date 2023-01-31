@@ -131,7 +131,6 @@ func extractDst(cmds []string) *DstSettings {
 			if len(filePaths) > 1 {
 				fmt.Printf("[error] refuse to overwrite existing file(s): %s\n", filePaths)
 			}
-			fmt.Print(filePaths, cmds, folderPaths)
 			fmt.Println("for emojify mode, specify atleast an input image and at max a second path for output image")
 			return nil
 		}
